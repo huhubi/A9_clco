@@ -1,0 +1,3 @@
+config:
+  azure-managed-disks:diskSize: "1024"
+  azure-managed-disks:diskSku: Permium_LRS

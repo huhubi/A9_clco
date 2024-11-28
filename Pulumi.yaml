@@ -1,0 +1,36 @@
+name: azure-managed-disks
+runtime: yaml
+
+resources:
+  resourceGroup:
+    type: azure-native:resources:ResourceGroup
+    properties:
+      resourceGroupName: A9ResourceGroup
+      location: uksouth
+  disk1:
+    type: azure-native:compute:Disk
+    properties:
+      resourceGroupName: A9ResourceGroup
+      diskName: disk1
+      diskSizeGB: 64 # Specify the size of the disk in GB
+      sku:
+        name: Standard_LRS # Specify the type of the disk
+      creationData:
+        createOption: Empty # Indicates that the disk will be created empty
+      location: uksouth
+
+  disk2:
+    type: azure-native:compute:Disk
+    properties:
+      resourceGroupName: A9ResourceGroup
+      diskName: disk2
+      diskSizeGB: 128 # Specify the size of the disk in GB
+      sku:
+        name: Premium_LRS # Specify the type of the disk
+      creationData:
+        createOption: Empty # Indicates that the disk will be created empty
+      location: uksouth
+
+outputs:
+  disk1_id: ${disk1.id}
+  disk2_id: ${disk2.id}
