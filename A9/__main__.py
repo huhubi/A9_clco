@@ -6,10 +6,11 @@ import base64
 
 # Import the program's configuration settings
 config = pulumi.Config()
-vm_name = config.get("vmName", "my-server")
+vm_name1 = config.get("vm1", "my-server1")
+vm_name2 = config.get("vm2", "my-server2")
 vm_size = config.get("vmSize", "Standard_A1_v2")
 os_image = config.get("osImage", "Debian:debian-11:11:latest")
-admin_username = config.get("adminUsername", "pulumiuser")
+admin_username = config.get("azureuser", "pulumiuser")
 service_port = config.get("servicePort", "80")
 
 os_image_publisher, os_image_offer, os_image_sku, os_image_version = os_image.split(":")
@@ -22,9 +23,9 @@ ssh_key = tls.PrivateKey(
 )
 
 # Create a resource group
-resource_group = resources.ResourceGroup("resource-group")
+resource_group = resources.ResourceGroup("A9resource-group")
 
-# Create a virtual network
+# Create a virtual network with two subnets
 virtual_network = network.VirtualNetwork(
     "network",
     resource_group_name=resource_group.name,
@@ -35,26 +36,47 @@ virtual_network = network.VirtualNetwork(
     },
     subnets=[
         {
-            "name": f"{vm_name}-subnet",
+            "name": f"{vm_name1}-subnet",
             "address_prefix": "10.0.1.0/24",
+        },
+        {
+            "name": f"{vm_name2}-subnet",
+            "address_prefix": "10.0.2.0/24",
         },
     ],
 )
-# Use a random string to give the VM a unique DNS name
-domain_name_label = random_string.RandomString(
-    "domain-label",
+
+# Use random strings to give the VMs unique DNS names
+domain_name_label1 = random_string.RandomString(
+    "domain-label-1",
     length=8,
     upper=False,
     special=False,
-).result.apply(lambda result: f"{vm_name}-{result}")
+).result.apply(lambda result: f"{vm_name1}-{result}")
 
-# Create a public IP address for the VM
-public_ip = network.PublicIPAddress(
-    "public-ip",
+domain_name_label2 = random_string.RandomString(
+    "domain-label-2",
+    length=8,
+    upper=False,
+    special=False,
+).result.apply(lambda result: f"{vm_name2}-{result}")
+
+# Create public IP addresses for the VMs
+public_ip1 = network.PublicIPAddress(
+    "public-ip-1",
     resource_group_name=resource_group.name,
     public_ip_allocation_method=network.IpAllocationMethod.DYNAMIC,
     dns_settings={
-        "domain_name_label": domain_name_label,
+        "domain_name_label": domain_name_label1,
+    },
+)
+
+public_ip2 = network.PublicIPAddress(
+    "public-ip-2",
+    resource_group_name=resource_group.name,
+    public_ip_allocation_method=network.IpAllocationMethod.DYNAMIC,
+    dns_settings={
+        "domain_name_label": domain_name_label2,
     },
 )
 
@@ -64,7 +86,7 @@ security_group = network.NetworkSecurityGroup(
     resource_group_name=resource_group.name,
     security_rules=[
         {
-            "name": f"{vm_name}-securityrule",
+            "name": f"{vm_name1}-securityrule",
             "priority": 1000,
             "direction": network.AccessRuleDirection.INBOUND,
             "access": "Allow",
@@ -80,30 +102,57 @@ security_group = network.NetworkSecurityGroup(
     ],
 )
 
-# Create a network interface with the virtual network, IP address, and security group
-network_interface = network.NetworkInterface(
-    "network-interface",
+# Create network interfaces for the VMs
+network_interface1 = network.NetworkInterface(
+    "network-interface-1",
     resource_group_name=resource_group.name,
     network_security_group={
         "id": security_group.id,
     },
     ip_configurations=[
         {
-            "name": f"{vm_name}-ipconfiguration",
+            "name": f"{vm_name1}-ipconfiguration",
             "private_ip_allocation_method": network.IpAllocationMethod.DYNAMIC,
             "subnet": {
-                "id": virtual_network.subnets.apply(lambda subnets: subnets[0].id),
+                "id": virtual_network.subnets.apply(
+                    lambda subnets: next(
+                        s.id for s in subnets if s.name == f"{vm_name1}-subnet"
+                    )
+                ),
             },
             "public_ip_address": {
-                "id": public_ip.id,
+                "id": public_ip1.id,
             },
         },
     ],
 )
 
-# Define a script to be run when the VM starts up
-init_script = f"""#!/bin/bash
+network_interface2 = network.NetworkInterface(
+    "network-interface-2",
+    resource_group_name=resource_group.name,
+    network_security_group={
+        "id": security_group.id,
+    },
+    ip_configurations=[
+        {
+            "name": f"{vm_name2}-ipconfiguration",
+            "private_ip_allocation_method": network.IpAllocationMethod.DYNAMIC,
+            "subnet": {
+                "id": virtual_network.subnets.apply(
+                    lambda subnets: next(
+                        s.id for s in subnets if s.name == f"{vm_name2}-subnet"
+                    )
+                ),
+            },
+            "public_ip_address": {
+                "id": public_ip2.id,
+            },
+        },
+    ],
+)
 
+# Define a script to be run when the VMs start up
+init_script = f"""#!/bin/bash
     # Update package list and install Nginx
     sudo apt-get update
     sudo apt-get install -y nginx
@@ -111,6 +160,7 @@ init_script = f"""#!/bin/bash
     # Start Nginx service
     sudo systemctl start nginx
     sudo systemctl enable nginx
+
     echo '<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -125,14 +175,41 @@ init_script = f"""#!/bin/bash
     sudo python3 -m http.server {service_port} &
     """
 
-# Create the virtual machine
-vm = compute.VirtualMachine(
-    "vm",
+# Create two managed disks
+disk1 = compute.Disk(
+    "disk1",
+    resource_group_name=resource_group.name,
+    location=resource_group.location,
+    sku={
+        "name": "Standard_LRS",
+    },
+    creation_data={
+        "create_option": compute.DiskCreateOption.EMPTY
+    },
+    disk_size_gb=10
+)
+
+disk2 = compute.Disk(
+    "disk2",
+    resource_group_name=resource_group.name,
+    location=resource_group.location,
+    sku={
+        "name": "Standard_LRS",
+    },
+    creation_data={
+        "create_option": compute.DiskCreateOption.EMPTY
+    },
+    disk_size_gb=10
+)
+
+# Create the virtual machines
+vm1 = compute.VirtualMachine(
+    "vm1",
     resource_group_name=resource_group.name,
     network_profile={
         "network_interfaces": [
             {
-                "id": network_interface.id,
+                "id": network_interface1.id,
                 "primary": True,
             }
         ]
@@ -141,7 +218,7 @@ vm = compute.VirtualMachine(
         "vm_size": vm_size,
     },
     os_profile={
-        "computer_name": vm_name,
+        "computer_name": vm_name1,
         "admin_username": admin_username,
         "custom_data": base64.b64encode(bytes(init_script, "utf-8")).decode("utf-8"),
         "linux_configuration": {
@@ -158,7 +235,7 @@ vm = compute.VirtualMachine(
     },
     storage_profile={
         "os_disk": {
-            "name": f"{vm_name}-osdisk",
+            "name": f"{vm_name1}-osdisk",
             "create_option": compute.DiskCreateOption.FROM_IMAGE,
         },
         "image_reference": {
@@ -167,27 +244,127 @@ vm = compute.VirtualMachine(
             "sku": os_image_sku,
             "version": os_image_version,
         },
-    },
+        "data_disks": [
+            {
+                "lun": 0,
+                "name": disk1.name,
+                "create_option": "Attach",
+                "managed_disk": {
+                    "id": disk1.id
+                },
+            },
+        ],
+    }
 )
 
-# Once the machine is created, fetch its IP address and DNS hostname
-vm_address = vm.id.apply(
+vm2 = compute.VirtualMachine(
+    "vm2",
+    resource_group_name=resource_group.name,
+    network_profile={
+        "network_interfaces": [
+            {
+                "id": network_interface2.id,
+                "primary": True,
+            }
+        ]
+    },
+    hardware_profile={
+        "vm_size": vm_size,
+    },
+    os_profile={
+        "computer_name": vm_name2,
+        "admin_username": admin_username,
+        "custom_data": base64.b64encode(bytes(init_script, "utf-8")).decode("utf-8"),
+        "linux_configuration": {
+            "disable_password_authentication": True,
+            "ssh": {
+                "public_keys": [
+                    {
+                        "key_data": ssh_key.public_key_openssh,
+                        "path": f"/home/{admin_username}/.ssh/authorized_keys",
+                    },
+                ],
+            },
+        },
+    },
+    storage_profile={
+        "os_disk": {
+            "name": f"{vm_name2}-osdisk",
+            "create_option": compute.DiskCreateOption.FROM_IMAGE,
+        },
+        "image_reference": {
+            "publisher": os_image_publisher,
+            "offer": os_image_offer,
+            "sku": os_image_sku,
+            "version": os_image_version,
+        },
+        "data_disks": [
+            {
+                "lun": 0,
+                "name": disk2.name,
+                "create_option": "Attach",
+                "managed_disk": {
+                    "id": disk2.id
+                },
+            },
+        ],
+    }
+)
+
+# Once the machines are created, fetch their IP addresses and DNS hostnames
+vm1_address = vm1.id.apply(
     lambda id: network.get_public_ip_address_output(
         resource_group_name=resource_group.name,
-        public_ip_address_name=public_ip.name,
+        public_ip_address_name=public_ip1.name,
     )
 )
 
-# Export the VM's hostname, public IP address, HTTP URL, and SSH private key
-pulumi.export("ip", vm_address.ip_address)
-pulumi.export("hostname", vm_address.dns_settings.apply(lambda settings: settings.fqdn))
+vm2_address = vm2.id.apply(
+    lambda id: network.get_public_ip_address_output(
+        resource_group_name=resource_group.name,
+        public_ip_address_name=public_ip2.name,
+    )
+)
+
+# Export the VMs' hostnames, public IP addresses, HTTP URLs, and SSH private key
+pulumi.export("vm1_ip", vm1_address.ip_address)
+pulumi.export("vm1_hostname", vm1_address.dns_settings.apply(lambda settings: settings.fqdn))
 pulumi.export(
-    "url",
-    vm_address.dns_settings.apply(
+    "vm1_url",
+    vm1_address.dns_settings.apply(
         lambda settings: f"http://{settings.fqdn}:{service_port}"
     ),
 )
+
+pulumi.export("vm2_ip", vm2_address.ip_address)
+pulumi.export("vm2_hostname", vm2_address.dns_settings.apply(lambda settings: settings.fqdn))
+pulumi.export(
+    "vm2_url",
+    vm2_address.dns_settings.apply(
+        lambda settings: f"http://{settings.fqdn}:{service_port}"
+    ),
+)
+
 pulumi.export(
     "privatekey",
     ssh_key.private_key_openssh,
 )
+
+# Export the SSH connection strings
+pulumi.export(
+    "vm1_ssh_connection_string",
+    vm1_address.ip_address.apply(
+        lambda ip: f"ssh -i <path-to-private-key> {admin_username}@{ip}"
+    ),
+)
+
+pulumi.export(
+    "vm2_ssh_connection_string",
+    vm2_address.ip_address.apply(
+        lambda ip: f"ssh -i <path-to-private-key> {admin_username}@{ip}"
+    ),
+)
+
+# Export the disk IDs
+pulumi.export("disk1_id", disk1.id)
+pulumi.export("disk2_id", disk2.id)
