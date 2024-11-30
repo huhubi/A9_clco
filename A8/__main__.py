@@ -132,7 +132,7 @@ vm1 = azure_native.compute.VirtualMachine("vm1",
             id=nic1.id
         )]
     ),
-    hardware_profile=azure_native.compute.HardwareProfileArgs(vm_size="Standard_A1_v2"),
+    hardware_profile=azure_native.compute.HardwareProfileArgs(vm_size="Standard_B2ts_v2"),
     storage_profile=azure_native.compute.StorageProfileArgs(
         os_disk=azure_native.compute.OSDiskArgs(create_option="FromImage"),
         image_reference=azure_native.compute.ImageReferenceArgs(
@@ -173,7 +173,7 @@ vm2 = azure_native.compute.VirtualMachine("vm2",
             id=nic2.id
         )]
     ),
-    hardware_profile=azure_native.compute.HardwareProfileArgs(vm_size="Standard_A1_v2"),
+    hardware_profile=azure_native.compute.HardwareProfileArgs(vm_size="Standard_B2ts_v2"),
     storage_profile=azure_native.compute.StorageProfileArgs(
         os_disk=azure_native.compute.OSDiskArgs(create_option="FromImage"),
         image_reference=azure_native.compute.ImageReferenceArgs(
