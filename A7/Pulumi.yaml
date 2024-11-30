@@ -1,0 +1,11 @@
+name: A7
+description: CLCO Exercise A7
+runtime:
+  name: python
+  options:
+    toolchain: pip
+    virtualenv: C:\Users\huber\PycharmProjects\A9_clco\venv
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: azure-python
