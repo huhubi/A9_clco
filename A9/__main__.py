@@ -301,8 +301,8 @@ vm1_extension = azure_native.compute.VirtualMachineExtension("vm1Extension",
     auto_upgrade_minor_version=True,
     settings={
         "commandToExecute": "sudo apt-get update && sudo apt-get install -y nginx && "
-                            "echo '<head><title>Web server 2</title></head><body><h1>Web Portal</h1>"
-                            "<p>Web server 1</p></body>' | sudo tee /var/www/html/index.nginx-debian.html && "
+                            "echo '<head><title>Hello World 1</title></head><body><h1>Web Portal</h1>"
+                            "<p>Hello World 1</p></body>' | sudo tee /var/www/html/index.nginx-debian.html && "
                             "sudo systemctl restart nginx"
     })
 
@@ -317,8 +317,8 @@ vm2_extension = azure_native.compute.VirtualMachineExtension("vm2Extension",
     auto_upgrade_minor_version=True,
     settings={
         "commandToExecute": "sudo apt-get update && sudo apt-get install -y nginx && "
-                            "echo '<head><title>Web server 2</title></head><body><h1>Web Portal</h1>"
-                            "<p>Web server 2</p></body>' | sudo tee /var/www/html/index.nginx-debian.html && "
+                            "echo '<head><title>Hello World 2</title></head><body><h1>Web Portal</h1>"
+                            "<p>Hello World 2</p></body>' | sudo tee /var/www/html/index.nginx-debian.html && "
                             "sudo systemctl restart nginx"
     })
 
