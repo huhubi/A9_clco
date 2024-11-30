@@ -1,8 +1,11 @@
 import pulumi
-from pulumi_azure_native import resources, network, compute
+from pulumi_azure_native import resources, network, compute, recoveryservices
+import pulumi_azure_native as azure_native
 from pulumi_random import random_string
 import pulumi_tls as tls
 import base64
+
+
 
 # Import the program's configuration settings
 config = pulumi.Config()
@@ -15,6 +18,8 @@ service_port = config.get("servicePort", "80")
 
 os_image_publisher, os_image_offer, os_image_sku, os_image_version = os_image.split(":")
 
+
+
 # Create an SSH key
 ssh_key = tls.PrivateKey(
     "ssh-key",
@@ -22,9 +27,34 @@ ssh_key = tls.PrivateKey(
     rsa_bits=4096,
 )
 
+
 # Create a resource group
 resource_group = resources.ResourceGroup("A9resource-group")
+"""
+# Create an Azure Key Vault
+backup_vault = azure_native.keyvault.Vault(
+    "vault",
+    location="uksouth",  # Replace with your location
+    properties={
+        "enabled_for_deployment": True,
+        "enabled_for_disk_encryption": True,
+        "enabled_for_template_deployment": True,
+        "public_network_access": "Enabled",
+        "sku": {
+            "family": azure_native.keyvault.SkuFamily.A,
+            "name": azure_native.keyvault.SkuName.STANDARD,
+        },
+        "tenant_id": "084fcc17-2a37-4c44-968f-5b2d634b2b6f",  # Replace with your tenant ID
+        "retention_policy": {
+            "enabled": True,
+            "days": 30  # Specifies retention duration in days
+        }
+    },
+    resource_group_name=resource_group.name,
+    vault_name="A9BackupVault1234",  # Replace with your desired Key Vault name
+)
 
+"""
 # Create a virtual network with two subnets
 virtual_network = network.VirtualNetwork(
     "network",
@@ -60,6 +90,7 @@ domain_name_label2 = random_string.RandomString(
     upper=False,
     special=False,
 ).result.apply(lambda result: f"{vm_name2}-{result}")
+
 
 # Create public IP addresses for the VMs
 public_ip1 = network.PublicIPAddress(
@@ -161,17 +192,6 @@ init_script = f"""#!/bin/bash
     sudo systemctl start nginx
     sudo systemctl enable nginx
 
-    echo '<!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <title>Hello, world!</title>
-    </head>
-    <body>
-        <h1>Hello, world! 👋</h1>
-        <p>Deployed with 💜 by <a href="https://pulumi.com/">Pulumi</a>.</p>
-    </body>
-    </html>' > index.html
     sudo python3 -m http.server {service_port} &
     """
 
@@ -181,12 +201,12 @@ disk1 = compute.Disk(
     resource_group_name=resource_group.name,
     location=resource_group.location,
     sku={
-        "name": "Standard_LRS",
+        "name": " Standard_LRS",
     },
     creation_data={
         "create_option": compute.DiskCreateOption.EMPTY
     },
-    disk_size_gb=10
+    disk_size_gb=1024
 )
 
 disk2 = compute.Disk(
@@ -194,12 +214,13 @@ disk2 = compute.Disk(
     resource_group_name=resource_group.name,
     location=resource_group.location,
     sku={
-        "name": "Standard_LRS",
+        "name": " Standard_LRS",
+        #Premium_LRS cannot be used because it is not compatible with the Vm size Standard_A1_v2
     },
     creation_data={
         "create_option": compute.DiskCreateOption.EMPTY
     },
-    disk_size_gb=10
+    disk_size_gb=1024
 )
 
 # Create the virtual machines
@@ -227,7 +248,7 @@ vm1 = compute.VirtualMachine(
                 "public_keys": [
                     {
                         "key_data": ssh_key.public_key_openssh,
-                        "path": f"/home/{admin_username}/.ssh/authorized_keys",
+                        "path": f"C:\Users\huber\.ssh\",
                     },
                 ],
             },
@@ -311,6 +332,10 @@ vm2 = compute.VirtualMachine(
     }
 )
 
+
+
+
+
 # Once the machines are created, fetch their IP addresses and DNS hostnames
 vm1_address = vm1.id.apply(
     lambda id: network.get_public_ip_address_output(
@@ -325,6 +350,7 @@ vm2_address = vm2.id.apply(
         public_ip_address_name=public_ip2.name,
     )
 )
+
 
 # Export the VMs' hostnames, public IP addresses, HTTP URLs, and SSH private key
 pulumi.export("vm1_ip", vm1_address.ip_address)
@@ -368,3 +394,8 @@ pulumi.export(
 # Export the disk IDs
 pulumi.export("disk1_id", disk1.id)
 pulumi.export("disk2_id", disk2.id)
+# Export backup vault details
+#ulumi.export("backup_vault_name", backup_vault.name)
+#pulumi.export("key_vault_id", backup_vault.id)
+
+
