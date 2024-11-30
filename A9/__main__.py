@@ -9,7 +9,7 @@ import base64
 config = pulumi.Config()
 vm_name1 = config.get("vm1", "my-server1")
 vm_name2 = config.get("vm2", "my-server2")
-vm_size = config.get("vmSize", "Standard_A1_v2")
+vm_size = config.get("vmSize", "Standard_B2ts_v2")
 os_image = config.get("osImage", "Debian:debian-11:11:latest")
 admin_username = config.get("azureuser", "pulumiuser")
 service_port = config.get("servicePort", "80")
@@ -302,7 +302,7 @@ vm1_extension = azure_native.compute.VirtualMachineExtension("vm1Extension",
     settings={
         "commandToExecute": "sudo apt-get update && sudo apt-get install -y nginx && "
                             "echo '<head><title>Web server 2</title></head><body><h1>Web Portal</h1>"
-                            "<p>Web server 2</p></body>' | sudo tee /var/www/html/index.nginx-debian.html && "
+                            "<p>Web server 1</p></body>' | sudo tee /var/www/html/index.nginx-debian.html && "
                             "sudo systemctl restart nginx"
     })
 
