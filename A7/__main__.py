@@ -190,5 +190,5 @@ source_control = azure_native.web.WebAppSourceControl("sourceControl",
     deployment_rollback_enabled=False
 )
 
-# Export the Web App hostname
-pulumi.export("hostname", web_app.default_host_name)
+# Export the Web App hostname as a Markdown link
+pulumi.export("hostname", pulumi.Output.concat("[Web App](http://", web_app.default_host_name, ")"))
