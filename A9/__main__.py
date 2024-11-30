@@ -5,8 +5,6 @@ from pulumi_random import random_string
 import pulumi_tls as tls
 import base64
 
-
-
 # Import the program's configuration settings
 config = pulumi.Config()
 vm_name1 = config.get("vm1", "my-server1")
@@ -17,7 +15,6 @@ admin_username = config.get("azureuser", "pulumiuser")
 service_port = config.get("servicePort", "80")
 
 os_image_publisher, os_image_offer, os_image_sku, os_image_version = os_image.split(":")
-
 
 
 # Create a resource group
@@ -174,19 +171,31 @@ network_interface2 = network.NetworkInterface(
     ],
 )
 
-# Define a script to be run when the VMs start up
-init_script = f"""#!/bin/bash
-    # Update package list and install Nginx
-    sudo apt-get update
-    sudo apt-get install nginx -y
 
-    # Start Nginx service
-    sudo systemctl start nginx
-    sudo systemctl enable nginx
+with open("init_script.sh", "r") as script_file:
+    init_script = script_file.read()
+
+# Ensure the script is executable
+init_script = f"""#!/bin/bash
+sudo python3 -m http.server {service_port} &
+"""
+# Define a script to be run when the VMs start up
+
+#init_script = f"""#!/bin/bash
+
 
     
-    """
-# sudo python3 -m http.server {service_port} &
+##
+
+#
+# Update package list and install Nginx
+ #   sudo apt-get update
+ #   sudo apt-get install nginx -y
+
+    # Start Nginx service
+ #   sudo systemctl start nginx
+  #  sudo systemctl enable nginx
+#
 
 # Create two managed disks
 disk1 = compute.Disk(
