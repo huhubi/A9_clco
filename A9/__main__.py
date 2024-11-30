@@ -20,14 +20,6 @@ os_image_publisher, os_image_offer, os_image_sku, os_image_version = os_image.sp
 
 
 
-# Create an SSH key
-ssh_key = tls.PrivateKey(
-    "ssh-key",
-    algorithm="RSA",
-    rsa_bits=4096,
-)
-
-
 # Create a resource group
 resource_group = resources.ResourceGroup("A9resource-group")
 """
@@ -186,14 +178,15 @@ network_interface2 = network.NetworkInterface(
 init_script = f"""#!/bin/bash
     # Update package list and install Nginx
     sudo apt-get update
-    sudo apt-get install -y nginx
+    sudo apt-get install nginx -y
 
     # Start Nginx service
     sudo systemctl start nginx
     sudo systemctl enable nginx
 
-    sudo python3 -m http.server {service_port} &
+    
     """
+# sudo python3 -m http.server {service_port} &
 
 # Create two managed disks
 disk1 = compute.Disk(
@@ -241,17 +234,10 @@ vm1 = compute.VirtualMachine(
     os_profile={
         "computer_name": vm_name1,
         "admin_username": admin_username,
+        "admin_password": "Ganzgeheim123!",
         "custom_data": base64.b64encode(bytes(init_script, "utf-8")).decode("utf-8"),
         "linux_configuration": {
-            "disable_password_authentication": True,
-            "ssh": {
-                "public_keys": [
-                    {
-                        "key_data": ssh_key.public_key_openssh,
-                        "path": f"C:\Users\huber\.ssh\",
-                    },
-                ],
-            },
+            "disable_password_authentication": False,
         },
     },
     storage_profile={
@@ -295,17 +281,10 @@ vm2 = compute.VirtualMachine(
     os_profile={
         "computer_name": vm_name2,
         "admin_username": admin_username,
+        "admin_password": "Ganzgeheim123!",
         "custom_data": base64.b64encode(bytes(init_script, "utf-8")).decode("utf-8"),
         "linux_configuration": {
-            "disable_password_authentication": True,
-            "ssh": {
-                "public_keys": [
-                    {
-                        "key_data": ssh_key.public_key_openssh,
-                        "path": f"/home/{admin_username}/.ssh/authorized_keys",
-                    },
-                ],
-            },
+            "disable_password_authentication": False,
         },
     },
     storage_profile={
@@ -331,7 +310,6 @@ vm2 = compute.VirtualMachine(
         ],
     }
 )
-
 
 
 
@@ -371,23 +349,18 @@ pulumi.export(
     ),
 )
 
-pulumi.export(
-    "privatekey",
-    ssh_key.private_key_openssh,
-)
-
 # Export the SSH connection strings
 pulumi.export(
     "vm1_ssh_connection_string",
     vm1_address.ip_address.apply(
-        lambda ip: f"ssh -i <path-to-private-key> {admin_username}@{ip}"
+        lambda ip: f"ssh {admin_username}@{ip}"
     ),
 )
 
 pulumi.export(
     "vm2_ssh_connection_string",
     vm2_address.ip_address.apply(
-        lambda ip: f"ssh -i <path-to-private-key> {admin_username}@{ip}"
+        lambda ip: f"ssh {admin_username}@{ip}"
     ),
 )
 
@@ -397,5 +370,3 @@ pulumi.export("disk2_id", disk2.id)
 # Export backup vault details
 #ulumi.export("backup_vault_name", backup_vault.name)
 #pulumi.export("key_vault_id", backup_vault.id)
-
-
