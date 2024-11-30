@@ -170,21 +170,6 @@ network_interface2 = network.NetworkInterface(
 
 
 
-# Script which installs Python 3 and starts an HTTP server
-init_script = f"""#!/bin/bash
-sudo python3 -m http.server {service_port} &
-"""
-
-# Define a script to be run when the VMs start up (commented out)
-# init_script = f"""#!/bin/bash
-# Update package list and install Nginx
-# sudo apt-get update
-# sudo apt-get install nginx -y
-# Start Nginx service
-# sudo systemctl start nginx
-# sudo systemctl enable nginx
-# """
-
 # Create two managed disks
 disk1 = compute.Disk(
     "disk1",
@@ -232,7 +217,6 @@ vm1 = compute.VirtualMachine(
         "computer_name": vm_name1,
         "admin_username": admin_username,
         "admin_password": "Ganzgeheim123!",
-        "custom_data": base64.b64encode(bytes(init_script, "utf-8")).decode("utf-8"),
         "linux_configuration": {
             "disable_password_authentication": False,
         },
@@ -279,7 +263,6 @@ vm2 = compute.VirtualMachine(
         "computer_name": vm_name2,
         "admin_username": admin_username,
         "admin_password": "Ganzgeheim123!",
-        "custom_data": base64.b64encode(bytes(init_script, "utf-8")).decode("utf-8"),
         "linux_configuration": {
             "disable_password_authentication": False,
         },
@@ -307,6 +290,37 @@ vm2 = compute.VirtualMachine(
         ],
     }
 )
+
+vm1_extension = azure_native.compute.VirtualMachineExtension("vm1Extension",
+    resource_group_name=resource_group.name,
+    vm_name=vm1.name,
+    vm_extension_name="installNginx",
+    publisher="Microsoft.Azure.Extensions",
+    type="CustomScript",
+    type_handler_version="2.1",
+    auto_upgrade_minor_version=True,
+    settings={
+        "commandToExecute": "sudo apt-get update && sudo apt-get install -y nginx && "
+                            "echo '<head><title>Web server 2</title></head><body><h1>Web Portal</h1>"
+                            "<p>Web server 2</p></body>' | sudo tee /var/www/html/index.nginx-debian.html && "
+                            "sudo systemctl restart nginx"
+    })
+
+
+vm2_extension = azure_native.compute.VirtualMachineExtension("vm2Extension",
+    resource_group_name=resource_group.name,
+    vm_name=vm2.name,
+    vm_extension_name="installNginx",
+    publisher="Microsoft.Azure.Extensions",
+    type="CustomScript",
+    type_handler_version="2.1",
+    auto_upgrade_minor_version=True,
+    settings={
+        "commandToExecute": "sudo apt-get update && sudo apt-get install -y nginx && "
+                            "echo '<head><title>Web server 2</title></head><body><h1>Web Portal</h1>"
+                            "<p>Web server 2</p></body>' | sudo tee /var/www/html/index.nginx-debian.html && "
+                            "sudo systemctl restart nginx"
+    })
 
 # Once the machines are created, fetch their IP addresses and DNS hostnames
 vm1_address = vm1.id.apply(
