@@ -10,7 +10,7 @@ vebapp_name1 = config.get("webbapp1", "my-flaskwebapp1")
 vebapp_name2 = config.get("webbapp2", "my-flaskwebapp2")
 vebapp_name3 = config.get("webbapp3", "my-flaskwebapp3")
 azure_location = config.get("azure-native:location") or "uksouth"
-defined_repo_url = config.get("my:repoUrl") or "https://github.com/huhubi/clco-demo/"
+defined_repo_url = config.get("my:repoUrl") or "https://github.com/huhubi/flaskwebapp"
 defined_branch = config.get("my:branch") or "main"
 #//TODO zuerst repo link zu Hello World flask app hinzufügen um deployment zu verifizieren und danach umstellen
 # Resource Group
@@ -25,7 +25,7 @@ name_label1 = random_string.RandomString(
     upper=False,
     special=False,
 ).result.apply(lambda result: f"flaskweb-{result}")
-
+"""
 name_label2 = random_string.RandomString(
     "domain-label-2",
     length=8,
@@ -48,7 +48,7 @@ webapp_name_label1 = random_string.RandomString(
     upper=False,
     special=False,
 ).result.apply(lambda result: f"{web_app1}-{result}")
-"""
+
 # Virtual Network
 virtual_network = network.VirtualNetwork('virtualNetwork',
     resource_group_name=resource_group.name,
@@ -180,6 +180,7 @@ web_app1 = web.WebApp('webApp1',
     kind='app,linux',
     site_config=web.SiteConfigArgs(
         linux_fx_version='PYTHON|3.9',
+        app_command_line='pip install -r /home/site/wwwroot/requirements.txt && FLASK_APP=app.py python -m flask run --host=0.0.0.0 --port=8000',
         app_settings=[
             web.NameValuePairArgs(
                 name='AZ_ENDPOINT',
@@ -215,6 +216,7 @@ source_control1 = azure_native.web.WebAppSourceControl("sourceControl1",
     deployment_rollback_enabled=False
 )
 
+"""
 web_app2 = web.WebApp('webApp2',
     resource_group_name=resource_group.name,
     name=name_label2.apply(lambda name: name[:60]),
@@ -302,8 +304,8 @@ source_control3 = azure_native.web.WebAppSourceControl("sourceControl3",
     is_manual_integration=True,
     deployment_rollback_enabled=False
 )
-
+"""
 # Export the Web App hostname as a Markdown link
 pulumi.export("hostname", pulumi.Output.concat("[Web App](http://", web_app1.default_host_name, ")"))
-pulumi.export("hostname", pulumi.Output.concat("[Web App](http://", web_app2.default_host_name, ")"))
-pulumi.export("hostname", pulumi.Output.concat("[Web App](http://", web_app3.default_host_name, ")"))
+#pulumi.export("hostname", pulumi.Output.concat("[Web App](http://", web_app2.default_host_name, ")"))
+#pulumi.export("hostname", pulumi.Output.concat("[Web App](http://", web_app3.default_host_name, ")"))
