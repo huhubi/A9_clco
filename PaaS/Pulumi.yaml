@@ -4,7 +4,7 @@ runtime:
   name: python
   options:
     toolchain: pip
-    virtualenv: C:\Users\huber\PycharmProjects\A9_clco\venv
+    virtualenv: ..\venv
 config:
   pulumi:tags:
     value:

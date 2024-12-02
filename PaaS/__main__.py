@@ -6,48 +6,24 @@ from pulumi_random import random_string
 
 # Configuration variables
 config = Config()
-vebapp_name1 = config.get("webbapp1", "my-flaskwebapp1")
-vebapp_name2 = config.get("webbapp2", "my-flaskwebapp2")
-vebapp_name3 = config.get("webbapp3", "my-flaskwebapp3")
 azure_location = config.get("azure-native:location") or "uksouth"
+#defined_repo_url = config.get("my:repoUrl") or "https://github.com/huhubi/clco-demo/"
 defined_repo_url = config.get("my:repoUrl") or "https://github.com/huhubi/flaskwebapp"
 defined_branch = config.get("my:branch") or "main"
-#//TODO zuerst repo link zu Hello World flask app hinzufügen um deployment zu verifizieren und danach umstellen
+
 # Resource Group
-resource_group = resources.ResourceGroup('resourceGroup',
+resource_group = resources.ResourceGroup('A7resourceGroup',
     resource_group_name='A7resourceGroup',
     location=azure_location
 )
 
-name_label1 = random_string.RandomString(
-    "domain-label-1",
-    length=8,
-    upper=False,
-    special=False,
-).result.apply(lambda result: f"flaskweb-{result}")
-"""
-name_label2 = random_string.RandomString(
-    "domain-label-2",
-    length=8,
-    upper=False,
-    special=False,
-).result.apply(lambda result: f"{web_app2}-{result}")
-
-name_label3 = random_string.RandomString(
-    "domain-label-3",
-    length=8,
-    upper=False,
-    special=False,
-).result.apply(lambda result: f"{web_app3}-{result}")
-
-"""
 # Use random strings to give the Webappunique DNS names
 webapp_name_label1 = random_string.RandomString(
     "flaskwebapp-",
     length=8,
     upper=False,
     special=False,
-).result.apply(lambda result: f"{web_app1}-{result}")
+).result.apply(lambda result: f"{web_app}-{result}")
 
 # Virtual Network
 virtual_network = network.VirtualNetwork('virtualNetwork',
@@ -171,16 +147,15 @@ app_service_plan = web.AppServicePlan('appServicePlan',
 )
 
 # Web App
-web_app1 = web.WebApp('webApp1',
+web_app = web.WebApp('webApp',
     resource_group_name=resource_group.name,
-    name=name_label1.apply(lambda name: name[:60]),  # Ensure name length is valid
+    name="a7flaskwebapp",
     location=azure_location,
     server_farm_id=app_service_plan.id,
     https_only=True,
     kind='app,linux',
     site_config=web.SiteConfigArgs(
-        linux_fx_version='PYTHON|3.9',
-        app_command_line='pip install -r /home/site/wwwroot/requirements.txt && FLASK_APP=app.py python -m flask run --host=0.0.0.0 --port=8000',
+        linux_fx_version='PYTHON|3.8',
         app_settings=[
             web.NameValuePairArgs(
                 name='AZ_ENDPOINT',
@@ -201,14 +176,14 @@ web_app1 = web.WebApp('webApp1',
 )
 
 # VNet Integration
-vnet_integration1 = web.WebAppSwiftVirtualNetworkConnection('vnetIntegration1',
-    name=web_app1.name,
+vnet_integration = web.WebAppSwiftVirtualNetworkConnection('vnetIntegration',
+    name=web_app.name,
     resource_group_name=resource_group.name,
     subnet_resource_id=app_subnet.id
 )
 
-source_control1 = azure_native.web.WebAppSourceControl("sourceControl1",
-    name=web_app1.name,
+source_control = azure_native.web.WebAppSourceControl("sourceControl",
+    name=web_app.name,
     resource_group_name=resource_group.name,
     repo_url=defined_repo_url,  # Replace with your repository URL
     branch=defined_branch,  # Replace with your branch name
@@ -216,96 +191,5 @@ source_control1 = azure_native.web.WebAppSourceControl("sourceControl1",
     deployment_rollback_enabled=False
 )
 
-"""
-web_app2 = web.WebApp('webApp2',
-    resource_group_name=resource_group.name,
-    name=name_label2.apply(lambda name: name[:60]),
-    location=azure_location,
-    server_farm_id=app_service_plan.id,
-    https_only=True,
-    kind='app,linux',
-    site_config=web.SiteConfigArgs(
-        linux_fx_version='PYTHON|3.9',
-        app_settings=[
-            web.NameValuePairArgs(
-                name='AZ_ENDPOINT',
-                value=pulumi.Output.concat("https://", language_account.name, ".cognitiveservices.azure.com/")
-            ),
-            web.NameValuePairArgs(
-                name='AZ_KEY',
-                value=account_keys.key1
-            ),
-            web.NameValuePairArgs(
-                name='WEBSITE_RUN_FROM_PACKAGE',
-                value='0'
-            ),
-        ],
-        always_on=True,
-        ftps_state='Disabled'
-    )
-)
-
-# VNet Integration
-vnet_integration2 = web.WebAppSwiftVirtualNetworkConnection('vnetIntegration2',
-    name=web_app2.name,
-    resource_group_name=resource_group.name,
-    subnet_resource_id=app_subnet.id
-)
-
-source_control2 = azure_native.web.WebAppSourceControl("sourceControl2",
-    name=web_app2.name,
-    resource_group_name=resource_group.name,
-    repo_url=defined_repo_url,  # Replace with your repository URL
-    branch=defined_branch,  # Replace with your branch name
-    is_manual_integration=True,
-    deployment_rollback_enabled=False
-)
-
-web_app3 = web.WebApp('webApp3',
-    resource_group_name=resource_group.name,
-    name=name_label3.apply(lambda name: name[:60]),
-    location=azure_location,
-    server_farm_id=app_service_plan.id,
-    https_only=True,
-    kind='app,linux',
-    site_config=web.SiteConfigArgs(
-        linux_fx_version='PYTHON|3.9',
-        app_settings=[
-            web.NameValuePairArgs(
-                name='AZ_ENDPOINT',
-                value=pulumi.Output.concat("https://", language_account.name, ".cognitiveservices.azure.com/")
-            ),
-            web.NameValuePairArgs(
-                name='AZ_KEY',
-                value=account_keys.key1
-            ),
-            web.NameValuePairArgs(
-                name='WEBSITE_RUN_FROM_PACKAGE',
-                value='0'
-            ),
-        ],
-        always_on=True,
-        ftps_state='Disabled'
-    )
-)
-
-# VNet Integration
-vnet_integration3 = web.WebAppSwiftVirtualNetworkConnection('vnetIntegration3',
-    name=web_app3.name,
-    resource_group_name=resource_group.name,
-    subnet_resource_id=app_subnet.id
-)
-
-source_control3 = azure_native.web.WebAppSourceControl("sourceControl3",
-    name=web_app3.name,
-    resource_group_name=resource_group.name,
-    repo_url=defined_repo_url,  # Replace with your repository URL
-    branch=defined_branch,  # Replace with your branch name
-    is_manual_integration=True,
-    deployment_rollback_enabled=False
-)
-"""
 # Export the Web App hostname as a Markdown link
-pulumi.export("hostname", pulumi.Output.concat("[Web App](http://", web_app1.default_host_name, ")"))
-#pulumi.export("hostname", pulumi.Output.concat("[Web App](http://", web_app2.default_host_name, ")"))
-#pulumi.export("hostname", pulumi.Output.concat("[Web App](http://", web_app3.default_host_name, ")"))
+pulumi.export("hostname", pulumi.Output.concat("[Web App](http://", web_app.default_host_name, ")"))

@@ -31,7 +31,7 @@ resource_group = resources.ResourceGroup("A9resource-group")
 #         "sku": {
 #             "family": azure_native.keyvault.SkuFamily.A,
 #             "name": azure_native.keyvault.SkuName.STANDARD,
-#         },
+#         },S
 #         "tenant_id": "084fcc17-2a37-4c44-968f-5b2d634b2b6f",  # Replace with your tenant ID
 #         "retention_policy": {
 #             "enabled": True,

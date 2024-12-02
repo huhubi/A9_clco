@@ -7,12 +7,12 @@ from pulumi_random import random_string
 # Configuration variables
 config = Config()
 azure_location = config.get("azure-native:location") or "uksouth"
-#defined_repo_url = config.get("my:repoUrl") or "https://github.com/huhubi/clco-demo/"
-defined_repo_url = config.get("my:repoUrl") or "https://github.com/huhubi/flaskwebapp"
+defined_repo_url = config.get("my:repoUrl") or "https://github.com/huhubi/clco-demo/"
+#defined_repo_url = config.get("my:repoUrl") or "https://github.com/huhubi/flaskwebapp"
 defined_branch = config.get("my:branch") or "main"
 
 # Resource Group
-resource_group = resources.ResourceGroup('resourceGroup',
+resource_group = resources.ResourceGroup('A7resourceGroup',
     resource_group_name='A7resourceGroup',
     location=azure_location
 )
