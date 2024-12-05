@@ -70,7 +70,7 @@ dns_zone = network.PrivateZone('dnsZone',
 # Cognitive Services Account
 language_account = azure_native.cognitiveservices.Account("languageAccount",
     resource_group_name=resource_group.name,
-    account_name="A7LanguageService",
+    account_name="PaaSLanguageService",
     location=azure_location,
     kind="TextAnalytics",  # Change to 'Language' if needed
     sku=azure_native.cognitiveservices.SkuArgs(
@@ -78,7 +78,7 @@ language_account = azure_native.cognitiveservices.Account("languageAccount",
     ),
     properties=azure_native.cognitiveservices.AccountPropertiesArgs(
         public_network_access="Disabled",
-        custom_sub_domain_name="A7LanguageService",
+        custom_sub_domain_name="PaaSLanguageService",
         #restore=True  # Add this line to restore the soft-deleted resource
     ),
     identity=azure_native.cognitiveservices.IdentityArgs(
