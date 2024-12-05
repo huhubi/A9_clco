@@ -9,12 +9,12 @@ config = Config()
 azure_location = config.get("azure-native:location") or "uksouth"
 
 #defined_repo_url = config.get("my:repoUrl") or "https://github.com/huhubi/flaskwebapp"
-defined_repo_url = config.get("my:repoUrl") or "https://github.com/huhubi/clco_demo_copy"
+defined_repo_url = config.get("my:repoUrl") or "https://github.com/huhubi/clco-demo/"
 defined_branch = config.get("my:branch") or "main"
 
 # Resource Group
-resource_group = resources.ResourceGroup('PaaS',
-    resource_group_name='PaaS',
+resource_group = resources.ResourceGroup('PaaSResourceGroup',
+    resource_group_name='PaaSResourceGroup',
     location=azure_location
 )
 
@@ -71,7 +71,7 @@ dns_zone = network.PrivateZone('dnsZone',
 language_account = azure_native.cognitiveservices.Account("languageAccount",
     resource_group_name=resource_group.name,
     account_name="A7LanguageService",
-    location="uksouth",
+    location=azure_location,
     kind="TextAnalytics",  # Change to 'Language' if needed
     sku=azure_native.cognitiveservices.SkuArgs(
         name="F0"
@@ -79,7 +79,7 @@ language_account = azure_native.cognitiveservices.Account("languageAccount",
     properties=azure_native.cognitiveservices.AccountPropertiesArgs(
         public_network_access="Disabled",
         custom_sub_domain_name="A7LanguageService",
-        restore=True  # Add this line to restore the soft-deleted resource
+        #restore=True  # Add this line to restore the soft-deleted resource
     ),
     identity=azure_native.cognitiveservices.IdentityArgs(
         type="SystemAssigned"
@@ -141,7 +141,8 @@ app_service_plan = web.AppServicePlan('appServicePlan',
     location=azure_location,
     sku=web.SkuDescriptionArgs(
         name='B1',
-        tier='Basic'
+        tier='Basic',
+        capacity=3 # Set the capacity to 3
     ),
     kind='linux',
     reserved=True
@@ -156,7 +157,7 @@ web_app = web.WebApp('webApp',
     https_only=True,
     kind='app,linux',
     site_config=web.SiteConfigArgs(
-        linux_fx_version='PYTHON|3.8',
+        linux_fx_version='PYTHON|3.9',
         app_settings=[
             web.NameValuePairArgs(
                 name='AZ_ENDPOINT',

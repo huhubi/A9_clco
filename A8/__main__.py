@@ -8,7 +8,7 @@ config = pulumi.Config()
 azure_location = config.get("azure-native:location") or "uksouth"
 
 # Create an Azure Resource Group
-resource_group = azure_native.resources.ResourceGroup("myResourceGroup",
+resource_group = azure_native.resources.ResourceGroup("A8ResourceGroup",
     resource_group_name="A8ResourceGroup",)
 
 # Create a Virtual Network

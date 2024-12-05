@@ -1,5 +1,5 @@
-name: A12
-description: CLCO Exercise A12
+name: PaaS
+description: CLCO PaaS project
 runtime:
   name: python
   options:
