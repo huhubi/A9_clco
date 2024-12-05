@@ -151,7 +151,7 @@ app_service_plan = web.AppServicePlan('appServicePlan',
 # Web App
 web_app = web.WebApp('webApp',
     resource_group_name=resource_group.name,
-    name="a7flaskwebapp",
+    name="PaaSflaskwebapp",
     location=azure_location,
     server_farm_id=app_service_plan.id,
     https_only=True,
