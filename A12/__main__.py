@@ -198,7 +198,6 @@ pulumi.export(
     ),
 )
 
-
 # Export the SSH connection strings
 pulumi.export(
     "vm1_ssh_connection_string",
