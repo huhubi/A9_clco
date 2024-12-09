@@ -88,7 +88,7 @@ language_account = azure_native.cognitiveservices.Account(
         name="F0"  # SKU name
     ),
     properties=azure_native.cognitiveservices.AccountPropertiesArgs(
-        public_network_access="Disabled",  # Disable public network access
+        public_network_access="Disabled",  # Disable public network access as mentioned in Requirement 3
         custom_sub_domain_name="PaaSLanguageServiceProject",  # Custom sub-domain name
         restore=True  # Restore the account (remark: for new deployment comment this line)
     ),
@@ -190,11 +190,11 @@ web_app = web.WebApp('webApp',
         linux_fx_version='PYTHON|3.9',  # Runtime stack for the web app
         app_settings=[
             web.NameValuePairArgs(
-                name='AZ_ENDPOINT',  # Application setting for Azure endpoint
+                name='AZ_ENDPOINT',  # Application setting for Azure endpoint - Requirement 4
                 value=pulumi.Output.concat("https://", language_account.name, ".cognitiveservices.azure.com/")
             ),
             web.NameValuePairArgs(
-                name='AZ_KEY',  # Application setting for Azure key
+                name='AZ_KEY',  # Application setting for Azure key - Requirement 4
                 value=account_keys.key1
             ),
             web.NameValuePairArgs(
